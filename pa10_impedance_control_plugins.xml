@@ -1,0 +1,9 @@
+<library path="lib/libpa10_impedance_control">
+
+  <class name="pa10_impedance_control/ImpedanceController"
+    type="pa10_impedance_control::ImpedanceController"
+    base_class_type="controller_interface::ControllerBase">
+  </class>
+
+</library>
+

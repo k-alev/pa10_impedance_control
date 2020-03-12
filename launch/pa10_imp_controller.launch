@@ -1,0 +1,17 @@
+<launch>
+       	<arg name="paused" default="true"/>
+
+        <!-- Launch Gazebo  -->
+        <include file="$(find pa10_gazebo)/launch/KA_launch/pa10_KA_gazebo.launch" /> 
+
+	<rosparam file="$(find pa10_impedance_control)/config/ImpController.yaml"
+		command="load"/>
+
+	<node name="controller_spawner" pkg="controller_manager" type="spawner"
+		respawn="false" output="screen" ns="/pa10_KA"
+		args="joint_state_controller impedance_controller"/>
+
+	<node name="robot_state_publisher" pkg="robot_state_publisher"
+		type="state_publisher"
+		ns="/pa10_KA" />
+</launch>

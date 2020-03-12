@@ -1,0 +1,28 @@
+pa10_KA:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100  
+
+  # Impedance Controller ---------------------------------------
+  impedance_controller:
+    type: pa10_impedance_control/ImpedanceController
+    joints: 
+        - S1
+        - S2
+        - E1
+        - E2
+        - W1
+        - W2
+        - W3
+    ft_sensor:
+         - ft_sensor
+
+
+
+
+
+
+
+
+
