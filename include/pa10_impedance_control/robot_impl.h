@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ros_control_toolbox/robot.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/force_torque_sensor_interface.h>
@@ -11,7 +13,7 @@ void rct::robot::read_from_robot(const T &handle)
 namespace rct
 {
 template <>
-void robot::read_from_robot<hardware_interface::ForceTorqueSensorHandle>(const hardware_interface::ForceTorqueSensorHandle &handle)
+inline void robot::read_from_robot<hardware_interface::ForceTorqueSensorHandle>(const hardware_interface::ForceTorqueSensorHandle &handle)
 {
   const double *tmp_frc, *tmp_trq;
 
@@ -41,7 +43,7 @@ void robot::read_from_robot<hardware_interface::ForceTorqueSensorHandle>(const h
 namespace rct
 {
 template <>
-void rct::robot::read_from_robot<std::vector<hardware_interface::JointHandle>>(const std::vector<hardware_interface::JointHandle> &joints_)
+inline void rct::robot::read_from_robot<std::vector<hardware_interface::JointHandle>>(const std::vector<hardware_interface::JointHandle> &joints_)
 {
   //get position, velocity and torque measurements
   for (unsigned int i = 0; i < joints_.size(); i++)
@@ -55,7 +57,7 @@ void rct::robot::read_from_robot<std::vector<hardware_interface::JointHandle>>(c
 } // namespace rct
 
 template <class T>
-void rct::robot::write_to_robot(T &handle)
+inline void rct::robot::write_to_robot(T &handle)
 {
   std::cout << "writing to robot unspecialized" << std::endl;
 }
@@ -63,7 +65,7 @@ void rct::robot::write_to_robot(T &handle)
 namespace rct
 {
 template <>
-void robot::write_to_robot<std::vector<hardware_interface::JointHandle>>(std::vector<hardware_interface::JointHandle> &joints_)
+inline void robot::write_to_robot<std::vector<hardware_interface::JointHandle>>(std::vector<hardware_interface::JointHandle> &joints_)
 {
   std::cout<<"Command: "<<std::endl;
   for (unsigned int i = 0; i < joints_.size(); i++)

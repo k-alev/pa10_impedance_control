@@ -21,12 +21,12 @@
 namespace pa10_impedance_control
 {
 
-class ImpedanceController : public controller_interface::
-                                MultiInterfaceController<hardware_interface::EffortJointInterface>
+class AdmittanceController : public controller_interface::
+                                MultiInterfaceController<hardware_interface::VelocityJointInterface>
 {
 public:
-    ImpedanceController(void);
-    ~ImpedanceController(void);
+    AdmittanceController(void);
+    ~AdmittanceController(void);
 
     bool init(hardware_interface::RobotHW *robot, ros::NodeHandle &n);
     void starting(const ros::Time &time);
@@ -47,9 +47,10 @@ private:
     rct::Status cur_status = rct::Status();
     rct::Status ref = rct::Status();
 
-    Eigen::VectorXd cmd_acc;
+    Eigen::VectorXd cmd_vel;
     // cmd_acc.resize(6);
     Eigen::MatrixXd cmd_acc_ee;
+    Eigen::MatrixXd cmd_vel_ee;
     Eigen::MatrixXd torque;
     Eigen::Matrix<double, 6, 6> Md;
     Eigen::Matrix<double, 6, 6> Kd;

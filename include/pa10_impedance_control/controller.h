@@ -94,6 +94,11 @@ public:
         // cmd = (K * e + D * de);
     }
 
+    void integrate(const ros::Duration &duration, const Eigen::MatrixXd &acc, Eigen::MatrixXd &vel)
+    {
+        vel = vel + acc*duration.toSec();
+    }
+
 private:
     Eigen::Matrix<double, 6, 6> M;
     Eigen::Matrix<double, 6, 6> K;

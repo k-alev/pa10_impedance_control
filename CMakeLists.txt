@@ -43,6 +43,7 @@ include_directories(
 
 add_library(${PROJECT_NAME}
 src/impedance_controller.cpp
+src/admittance_controller.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -1,19 +1,19 @@
-#include <pa10_impedance_control/impedance_controller.h>
+#include <pa10_impedance_control/admittance_controller.h>
 
 
 namespace pa10_impedance_control
 {
-ImpedanceController::ImpedanceController(void){};
-ImpedanceController::~ImpedanceController(void)
+AdmittanceController::AdmittanceController(void){};
+AdmittanceController::~AdmittanceController(void)
 {
     delete pa10;
     delete ctrl;
 };
 
-bool ImpedanceController::init(hardware_interface::RobotHW *robot, ros::NodeHandle &n)
+bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHandle &n)
 {
 
-    hardware_interface::EffortJointInterface *robot_ = robot->get<hardware_interface::EffortJointInterface>();
+    hardware_interface::VelocityJointInterface *robot_ = robot->get<hardware_interface::VelocityJointInterface>();
     // hardware_interface::ForceTorqueSensorInterface *ft_sensor = robot->get<hardware_interface::ForceTorqueSensorInterface>();
     // hardware_interface::ArrayTorqueSensorsInterface *arr_trq_sensors = robot->get<hardware_interface::ArrayTorqueSensorsInterface>();
     node_ = n;
@@ -101,9 +101,10 @@ bool ImpedanceController::init(hardware_interface::RobotHW *robot, ros::NodeHand
     return true;
 }
 
-void ImpedanceController::starting(const ros::Time &time)
+void AdmittanceController::starting(const ros::Time &time)
 {
     ROS_INFO("Starting Controller");
+    cmd_vel_ee.setZero(6,1);
     pa10->read_sensor_handles(joints_);
     ref = pa10->get_status("ee");
 
@@ -119,7 +120,7 @@ void ImpedanceController::starting(const ros::Time &time)
 
 }
 
-void ImpedanceController::update(const ros::Time &time, const ros::Duration &duration)
+void AdmittanceController::update(const ros::Time &time, const ros::Duration &duration)
 {
     // ROS_INFO("Update Cartesian Controller");
     // // // Pa10->read_sensors<hardware_interface::ForceTorqueSensorHandle, std::vector<hardware_interface::JointHandle> >(ft_, joints_);
@@ -151,25 +152,24 @@ void ImpedanceController::update(const ros::Time &time, const ros::Duration &dur
     pa10->read_sensor_handles(joints_);
     cur_status = pa10->get_status("ee"); // with options, phaps update status
     ctrl->update(cur_status, ref, cmd_acc_ee);//command is accelerations perhaps in ee_frame
-    cmd_acc = pa10->acc2base(cmd_acc_ee); //needed only if cmd acc is in ee_frame
-    // pa10->get_inv_dynamics_cmd(cmd_acc_ee, torque); // torque is only for printing
-    // pa10->get_joint_vel_cmd(cmd_acc, 0.01);
-    pa10->get_inv_dynamics_cmd(cmd_acc, 0.01);
+    ctrl->integrate(duration, cmd_acc_ee, cmd_vel_ee);
+    cmd_vel = pa10->vel2base(cmd_vel_ee); //needed only if cmd acc is in ee_frame
+    pa10->get_joint_vel_cmd(cmd_vel, 0.01);
     pa10->send_commands<std::vector<hardware_interface::JointHandle>>(joints_);
 
 }
 
-void ImpedanceController::stopping(const ros::Time &time)
+void AdmittanceController::stopping(const ros::Time &time)
 {
     ROS_INFO("Stopping Controller");
 }
 
-void ImpedanceController::print()
+void AdmittanceController::print()
 {
     ROS_INFO("Printing");
     for (unsigned int i = 0; i < 6; i++)
     {
-        std::cout<<"Cart_cmd["<<i<<"]: "<<cmd_acc_ee(i)<<std::endl;
+        std::cout<<"Cart_cmd["<<i<<"]: "<<cmd_vel_ee(i)<<std::endl;
     }
     for (unsigned int i = 0; i < 7; i++)
     {
@@ -179,4 +179,4 @@ void ImpedanceController::print()
 
 }
 
-PLUGINLIB_EXPORT_CLASS(pa10_impedance_control::ImpedanceController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(pa10_impedance_control::AdmittanceController, controller_interface::ControllerBase)

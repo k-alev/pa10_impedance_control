@@ -5,5 +5,10 @@
     base_class_type="controller_interface::ControllerBase">
   </class>
 
+  <class name="pa10_impedance_control/AdmittanceController"
+    type="pa10_impedance_control::AdmittanceController"
+    base_class_type="controller_interface::ControllerBase">
+  </class>
+
 </library>
 
