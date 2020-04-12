@@ -1,6 +1,5 @@
 #include <pa10_impedance_control/admittance_controller.h>
 
-
 namespace pa10_impedance_control
 {
 AdmittanceController::AdmittanceController(void){};
@@ -58,6 +57,21 @@ bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHan
         return false;
     }
 
+    // /////////////////////////////////////////////////
+    if (!node_.getParam("/robot_description", box_desc_string))
+    {
+        ROS_ERROR("Could not find '/box_description'.");
+        return false;
+    }
+    managers.push_back(new fcl::NaiveCollisionManagerVct());
+
+    // if (!model.initString(box_desc_string))
+    // {
+    //     ROS_ERROR("Failed to parse urdf file");
+    //     return -1;
+    // }
+    // ////////////////////////////////////////////////
+
     std::vector<double> K_gain;
     if (!node_.getParam("k_gain", K_gain))
     {
@@ -89,12 +103,12 @@ bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHan
 
     Kd.setIdentity();
     Dd.setIdentity();
-    Kd.topLeftCorner(3,3) = K_gain[0]*Kd.topLeftCorner(3,3); //(20 7 5 2)
-    Kd.bottomRightCorner(3,3) = K_gain[1]*Kd.bottomRightCorner(3,3);
-    Dd.topLeftCorner(3,3) = D_gain[0]*Dd.topLeftCorner(3,3);
-    Dd.bottomRightCorner(3,3) = D_gain[1]*Dd.bottomRightCorner(3,3);   
-    torque.resize(7,1);
-    pa10 = new rct::robot(robot_desc_string, chain_lims[0], chain_lims[1], -9.81);
+    Kd.topLeftCorner(3, 3) = K_gain[0] * Kd.topLeftCorner(3, 3); //(20 7 5 2)
+    Kd.bottomRightCorner(3, 3) = K_gain[1] * Kd.bottomRightCorner(3, 3);
+    Dd.topLeftCorner(3, 3) = D_gain[0] * Dd.topLeftCorner(3, 3);
+    Dd.bottomRightCorner(3, 3) = D_gain[1] * Dd.bottomRightCorner(3, 3);
+    torque.resize(7, 1);
+    pa10 = new rct::robot(robot_desc_string, chain_lims[0], chain_lims[1], -9.81, true);
     ctrl = new rct_dev::ImpedanceCrtl(Md, Kd, Dd);
     // ...
 
@@ -104,20 +118,19 @@ bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHan
 void AdmittanceController::starting(const ros::Time &time)
 {
     ROS_INFO("Starting Controller");
-    cmd_vel_ee.setZero(6,1);
+    cmd_vel_ee.setZero(6, 1);
     pa10->read_sensor_handles(joints_);
     ref = pa10->get_status("ee");
 
     // Cartesian Space Reference
-    ref.frame.pos(0) = ref.frame.pos(0) +.2; //+.2;
-    ref.frame.pos(1) = ref.frame.pos(1) -.3; //-.3;5
-    ref.frame.pos(2) = ref.frame.pos(2) -.1; //-.1;2
+    ref.frame.pos(0) = ref.frame.pos(0) + .3; //+.2;
+    ref.frame.pos(1) = ref.frame.pos(1) - .4; //-.3;5
+    ref.frame.pos(2) = ref.frame.pos(2) - .2; //-.1;2
 
     //Joint Space Reference
     // ref.q_conf(0) = ref.q_conf(0) - 1.6;
     // ref.q_conf(1) = ref.q_conf(1) - 0.5;
     // ref.q_conf(5) = ref.q_conf(5) + 0.6;
-
 }
 
 void AdmittanceController::update(const ros::Time &time, const ros::Duration &duration)
@@ -126,7 +139,7 @@ void AdmittanceController::update(const ros::Time &time, const ros::Duration &du
     // // // Pa10->read_sensors<hardware_interface::ForceTorqueSensorHandle, std::vector<hardware_interface::JointHandle> >(ft_, joints_);
     // Pa10->read_sensor_handles(joints_);
     // cur_status = Pa10->get_status("ee"); // with options, phaps update status
-    
+
     // ctrl->update(cur_status, ref, cmd_acc_ee);//command is accelerations perhaps in ee_frame
     // // // Pa10->acc2base(cmd_acc_ee, cmd_acc); //needed only if cmd acc is in ee_frame
     // // Pa10->get_inv_dynamics_cmd(cmd_acc_ee, torque); // torque is only for printing
@@ -150,13 +163,35 @@ void AdmittanceController::update(const ros::Time &time, const ros::Duration &du
     ROS_INFO("Update Cartesian EE Controller");
     // // Pa10->read_sensors<hardware_interface::ForceTorqueSensorHandle, std::vector<hardware_interface::JointHandle> >(ft_, joints_);
     pa10->read_sensor_handles(joints_);
-    cur_status = pa10->get_status("ee"); // with options, phaps update status
-    ctrl->update(cur_status, ref, cmd_acc_ee);//command is accelerations perhaps in ee_frame
+    cur_status = pa10->get_status("ee");       // with options, phaps update status
+    ctrl->update(cur_status, ref, cmd_acc_ee); //command is accelerations perhaps in ee_frame
     ctrl->integrate(duration, cmd_acc_ee, cmd_vel_ee);
     cmd_vel = pa10->vel2base(cmd_vel_ee); //needed only if cmd acc is in ee_frame
     pa10->get_joint_vel_cmd(cmd_vel, 0.01);
     pa10->send_commands<std::vector<hardware_interface::JointHandle>>(joints_);
 
+    /////////////////////////////////////////////////////////////////
+    // fcl::FCLdistance test;
+    // test.broad_phase_self_distance_test(100, 1000, 1);
+
+    // FCLdistance2 test;
+    // test.broadphase_distance();
+    statuser = pa10->get_links_status();
+    std::cout << "Link0 pos: " << statuser[4].frame.pos << std::endl;
+
+    // std::vector<std::string> takis;
+    // takis.push_back(box_desc_string);
+    // managers[0]->registerVct(takis);
+
+    // std::vector<urdf::LinkSharedPtr> links;
+    // model.getLinks(links);
+    // std::cout << "Name: " << links[0]->name << std::endl;
+    // links[0]->collision->
+
+    urdf2fcl::getCollisionObjects(box_desc_string);
+    urdf2fcl::getCollisionObjects(box_desc_string, pa10->get_kdl_chain());
+
+    ////////////////////////////////////////////////////////////
 }
 
 void AdmittanceController::stopping(const ros::Time &time)
@@ -169,14 +204,14 @@ void AdmittanceController::print()
     ROS_INFO("Printing");
     for (unsigned int i = 0; i < 6; i++)
     {
-        std::cout<<"Cart_cmd["<<i<<"]: "<<cmd_vel_ee(i)<<std::endl;
+        std::cout << "Cart_cmd[" << i << "]: " << cmd_vel_ee(i) << std::endl;
     }
     for (unsigned int i = 0; i < 7; i++)
     {
-        std::cout<<"Torque["<<i<<"]: "<<torque(i)<<std::endl;
+        std::cout << "Torque[" << i << "]: " << torque(i) << std::endl;
     }
 }
 
-}
+} // namespace pa10_impedance_control
 
 PLUGINLIB_EXPORT_CLASS(pa10_impedance_control::AdmittanceController, controller_interface::ControllerBase)

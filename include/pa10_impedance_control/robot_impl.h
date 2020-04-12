@@ -21,20 +21,19 @@ inline void robot::read_from_robot<hardware_interface::ForceTorqueSensorHandle>(
   tmp_trq = handle.getTorque();
 
   //ft should be expressed in base frame
-
-  // for (unsigned int i = 0; i < 3; i++)
-  // {
-  //   ft.force(i) = tmp_frc[i];
-  //   ft.torque(i) = tmp_trq[i];
-  // }
-
-  //Kinova Mico returns ft in different frames
   for (unsigned int i = 0; i < 3; i++)
   {
-    ft_base.force(i) = -tmp_frc[i];
-    ft_base.torque(i) = -tmp_trq[i];
+    ft_base.force(i) = tmp_frc[i];
+    ft_base.torque(i) = tmp_trq[i];
   }
-  ft_base.torque = state_frame.M.R * ft_base.torque;
+
+  //Kinova Mico returns ft in different frames
+  // for (unsigned int i = 0; i < 3; i++)
+  // {
+  //   ft_base.force(i) = -tmp_frc[i];
+  //   ft_base.torque(i) = -tmp_trq[i];
+  // }
+  // ft_base.torque = state_frame.M.R * ft_base.torque;
 
   std::cout << "Reading F/T Handle " << std::endl;
 }
@@ -70,6 +69,7 @@ inline void robot::write_to_robot<std::vector<hardware_interface::JointHandle>>(
   std::cout<<"Command: "<<std::endl;
   for (unsigned int i = 0; i < joints_.size(); i++)
   {
+    // std::cout<<"takis: "<<i<<std::endl;
     joints_[i].setCommand(torque(i));
     std::cout<<torque(i)<<std::endl;
   }

@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   controller_interface
   hardware_interface
+  urdf
 )
 
 find_package(Eigen3 REQUIRED)
@@ -39,6 +40,8 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
   # ${rct_lib_INCLUDE_DIRS}
   /usr/local/include/ros_control_toolbox
+  /usr/include/fcl
+  /usr/local/include/fcl2rct
 )
 
 add_library(${PROJECT_NAME}
@@ -49,6 +52,8 @@ src/admittance_controller.cpp
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   /usr/local/lib/ros_control_toolbox/Release/librct_lib.a
+  /usr/local/lib/fcl2rct/Debug/libfcl2rct_lib.a
   ${orocos_kdl_LIBRARIES}
   ${kdl_parser_LIBRARIES}
+  /usr/lib/x86_64-linux-gnu/libfcl.so.0.5
 )

@@ -18,7 +18,7 @@ pa10_KA:
     ft_sensor:
         - ft_sensor
     k_gain: 
-        - 600.0
+        - 600.0 #if gazebo's loop rate is the default (600, 210, 80, 50)
         - 210.0
     d_gain: 
         - 800.0
@@ -41,11 +41,11 @@ pa10_KA:
     ft_sensor:
         - ft_sensor
     k_gain: 
-        - 600.0
-        - 210.0
+        - 12 #@30Hz #60.0 #if gazebo's loop rate is the default
+        - 4.2        #21.0
     d_gain: 
-        - 800.0
-        - 500.0
+        - 45        #80.0
+        - 30.0        #50.0
     chain:
         - world
         - link_wrist_3

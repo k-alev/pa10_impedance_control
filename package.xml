@@ -14,16 +14,19 @@
   <build_depend>rospy</build_depend>
   <build_depend>controller_interface</build_depend>
   <build_depend>hardware_interface</build_depend>
+  <build_depend>urdf</build_depend>
   <build_export_depend>pluginlib</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>controller_interface</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>urdf</build_export_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>controller_interface</exec_depend>
   <exec_depend>hardware_interface</exec_depend>
+  <exec_depend>urdf</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

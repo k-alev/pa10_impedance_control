@@ -14,9 +14,13 @@
 #include <pa10_impedance_control/array_torque_sensors.h>
 #include <pa10_impedance_control/robot_impl.h>
 #include <pa10_impedance_control/controller.h>
+#include <pa10_impedance_control/urdf2fcl_utils.h>
 
 #include <ros_control_toolbox/robot.h>
 #include <ros_control_toolbox/status.h>
+#include <fcl2rct/broadphase_bruteforce_vct.h>
+
+#include <urdf/model.h>
 
 namespace pa10_impedance_control
 {
@@ -46,6 +50,7 @@ private:
     rct_dev::ImpedanceCrtl *ctrl;
     rct::Status cur_status = rct::Status();
     rct::Status ref = rct::Status();
+    std::vector<rct::Status> statuser;
 
     Eigen::VectorXd cmd_vel;
     // cmd_acc.resize(6);
@@ -55,6 +60,13 @@ private:
     Eigen::Matrix<double, 6, 6> Md;
     Eigen::Matrix<double, 6, 6> Kd;
     Eigen::Matrix<double, 6, 6> Dd;
+
+
+    //////////////////////////
+    std::string box_desc_string;
+    std::vector<fcl::NaiveCollisionManagerVct *> managers;
+    urdf::Model model;
+    //////////////////////////
 };
 
 } // namespace RCTcontrol
