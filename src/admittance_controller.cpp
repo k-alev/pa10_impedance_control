@@ -58,18 +58,27 @@ bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHan
     }
 
     // /////////////////////////////////////////////////
-    if (!node_.getParam("/robot_description", box_desc_string))
+    std::string tmp_desc_string;
+    std::vector<std::string> env_desc_strings;
+    if (!node_.getParam("/box_description", tmp_desc_string))
     {
         ROS_ERROR("Could not find '/box_description'.");
         return false;
     }
-    managers.push_back(new fcl::NaiveCollisionManagerVct());
-
-    // if (!model.initString(box_desc_string))
-    // {
-    //     ROS_ERROR("Failed to parse urdf file");
-    //     return -1;
-    // }
+    env_desc_strings.push_back(tmp_desc_string);
+    if (!node_.getParam("/box2_description", tmp_desc_string))
+    {
+        ROS_ERROR("Could not find '/box_description'.");
+        return false;
+    }
+    env_desc_strings.push_back(tmp_desc_string);
+    if (!node_.getParam("/box3_description", tmp_desc_string))
+    {
+        ROS_ERROR("Could not find '/box_description'.");
+        return false;
+    }
+    env_desc_strings.push_back(tmp_desc_string);
+    
     // ////////////////////////////////////////////////
 
     std::vector<double> K_gain;
@@ -111,6 +120,14 @@ bool AdmittanceController::init(hardware_interface::RobotHW *robot, ros::NodeHan
     pa10 = new rct::robot(robot_desc_string, chain_lims[0], chain_lims[1], -9.81, true);
     ctrl = new rct_dev::ImpedanceCrtl(Md, Kd, Dd);
     // ...
+
+    managers.push_back(new fcl::NaiveCollisionManagerVct()); // for robot
+    managers.push_back(new fcl::NaiveCollisionManagerVct()); // for envirinment
+    rbtObjs = urdf2fcl::getRobotCollisionObjects(robot_desc_string, pa10->get_kdl_chain());
+    managers[0]->registerVct(rbtObjs.first);
+    envObjs = urdf2fcl::getEnvCollisionObjects(env_desc_strings);
+    managers[1]->registerVct(envObjs.first);
+    visMark = new VisualMarkerPub(node_);
 
     return true;
 }
@@ -171,25 +188,25 @@ void AdmittanceController::update(const ros::Time &time, const ros::Duration &du
     pa10->send_commands<std::vector<hardware_interface::JointHandle>>(joints_);
 
     /////////////////////////////////////////////////////////////////
-    // fcl::FCLdistance test;
-    // test.broad_phase_self_distance_test(100, 1000, 1);
 
-    // FCLdistance2 test;
-    // test.broadphase_distance();
-    statuser = pa10->get_links_status();
-    std::cout << "Link0 pos: " << statuser[4].frame.pos << std::endl;
+    stata = pa10->get_links_status();
+    std::vector<rct::Status> novaStata = managers[0]->removeDuplicates(stata);
+    managers[0]->updateVct(novaStata, rbtObjs.second);
+    std::vector<std::vector<fcl::DistanceData>> datum;
+    managers[0]->distanceVct_Plus(managers[1], datum, 300, fcl::defaultDistanceFunction);
 
-    // std::vector<std::string> takis;
-    // takis.push_back(box_desc_string);
-    // managers[0]->registerVct(takis);
-
-    // std::vector<urdf::LinkSharedPtr> links;
-    // model.getLinks(links);
-    // std::cout << "Name: " << links[0]->name << std::endl;
-    // links[0]->collision->
-
-    urdf2fcl::getCollisionObjects(box_desc_string);
-    urdf2fcl::getCollisionObjects(box_desc_string, pa10->get_kdl_chain());
+    std::cout << "size: " << datum.size() << std::endl;
+    for (int i = 0; i < datum.size(); ++i)
+    {
+        for (std::vector<fcl::DistanceData>::iterator it = datum[i].begin(); it != datum[i].end(); ++it)
+        {
+            std::cout << "other_mngr" << i << ": " << (it)->result.min_distance <<" == "<<(it)->distVctWF.first.length() << std::endl;
+            // std::cout << "other_mngr_1pts" << i << ": " << (it)->result.nearest_points[0] << std::endl;
+            // std::cout << "other_mngr_2pts" << i << ": " << (it)->result.nearest_points[1] << std::endl;
+            std::cout << "first vector" << i << ": " << (it)->distVctWF.second << std::endl;
+        }
+    }
+    visMark->visualMarkerBroadcaster(datum, "/world");
 
     ////////////////////////////////////////////////////////////
 }

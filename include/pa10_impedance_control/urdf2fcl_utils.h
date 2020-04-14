@@ -4,7 +4,6 @@
 #include "fcl/collision_object.h"
 #include "fcl/shape/geometric_shape_to_BVH_model.h"
 #include <kdl/chain.hpp>
-#include <memory>
 
 namespace urdf2fcl
 {
@@ -55,43 +54,39 @@ fcl::Transform3f getLinkTransform(urdf::Pose pose)
 
 }
 
-void getCollisionObject(const urdf::LinkSharedPtr& linkPtr, std::vector<fcl::CollisionObject*> objs)
+void getCollisionObject(const urdf::LinkSharedPtr& linkPtr, std::pair<std::vector<fcl::CollisionObject*>, std::vector<fcl::Transform3f>>& result)
 {
     
     if ((linkPtr->collision != nullptr))
     {
         std::cout << "Name: " << linkPtr->name << std::endl;
-
-        // get link geometry (return fcl)
         auto geomFcl = getLinkGeometry(linkPtr->collision->geometry);
+        auto offset = getLinkTransform(linkPtr->collision->origin);
 
-        // std::cout << "FCL_Type: " <<geomFcl->getNodeType() << std::endl;
-
-        // get link transformation (translation, rotation) (return fcl)
-        auto tfmFcl = getLinkTransform(linkPtr->collision->origin);
-
-        // fcl::CollisionObject* obj = new fcl::CollisionObject(geomFcl, tfmFcl);
-        objs.push_back(new fcl::CollisionObject(geomFcl, tfmFcl));
+        // offsets.push_back(offset);
+        // objs.push_back(new fcl::CollisionObject(geomFcl, offset));
+        result.second.push_back(offset);
+        result.first.push_back(new fcl::CollisionObject(geomFcl, offset));
     }  
 }
 
-std::vector<fcl::CollisionObject*> getCollisionObjects(const std::string& desc) //this should be for the env so should have arg an std::vector<std::string> named as getEnvCollisionObjs
+std::pair<std::vector<fcl::CollisionObject*>, std::vector<fcl::Transform3f>> getEnvCollisionObjects(const std::vector<std::string>& desc) //this should be for the env so should have arg an std::vector<std::string> named as getEnvCollisionObjs
 {
-    urdf::Model model;
-    if (!model.initString(desc))
-        throw std::runtime_error("Failed to parse URDF string.");
-
-    std::vector<urdf::LinkSharedPtr> links;
-    model.getLinks(links);
-    std::vector<fcl::CollisionObject*> objs;
-
-    for (auto it = links.begin(); it != links.end(); ++it)
+    std::pair<std::vector<fcl::CollisionObject*>, std::vector<fcl::Transform3f>> result;
+    for(auto it = desc.begin(); it!= desc.end(); ++it)
     {
-        getCollisionObject(*it, objs);
+        urdf::Model model;
+        if (!model.initString(*it))
+            throw std::runtime_error("Failed to parse URDF string.");
+
+        std::vector<urdf::LinkSharedPtr> links;
+        model.getLinks(links);
+        getCollisionObject(links[0], result);
     }
+    return result;
 }
 
-std::vector<fcl::CollisionObject*>  getCollisionObjects(const std::string& desc, const KDL::Chain& chain) //this should be named as getRobotCollisionObjs
+std::pair<std::vector<fcl::CollisionObject*>, std::vector<fcl::Transform3f>> getRobotCollisionObjects(const std::string& desc, const KDL::Chain& chain) 
 {
     urdf::Model model;
     if (!model.initString(desc))
@@ -99,20 +94,20 @@ std::vector<fcl::CollisionObject*>  getCollisionObjects(const std::string& desc,
 
     std::vector<urdf::LinkSharedPtr> links;
     model.getLinks(links);
-    std::vector<fcl::CollisionObject*> objs;
+    std::pair<std::vector<fcl::CollisionObject*>, std::vector<fcl::Transform3f>> result;
     auto segs = chain.segments;
 
-    
     for (auto seg_it = segs.begin(); seg_it != segs.end(); ++seg_it)
     {
         for (auto lnk_it = links.begin(); lnk_it != links.end(); ++lnk_it)
         {
             if(seg_it->getName() == (*lnk_it)->name)
             {
-                getCollisionObject(*lnk_it, objs);
+                getCollisionObject(*lnk_it, result);
             }
         }
     }
+    return result;
 }
 
 } // namespace urdf2fcl

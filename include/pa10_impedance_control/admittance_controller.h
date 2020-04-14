@@ -15,6 +15,7 @@
 #include <pa10_impedance_control/robot_impl.h>
 #include <pa10_impedance_control/controller.h>
 #include <pa10_impedance_control/urdf2fcl_utils.h>
+#include <pa10_impedance_control/rviz_visual_marker_pub.h>
 
 #include <ros_control_toolbox/robot.h>
 #include <ros_control_toolbox/status.h>
@@ -50,7 +51,7 @@ private:
     rct_dev::ImpedanceCrtl *ctrl;
     rct::Status cur_status = rct::Status();
     rct::Status ref = rct::Status();
-    std::vector<rct::Status> statuser;
+    std::vector<rct::Status> stata;
 
     Eigen::VectorXd cmd_vel;
     // cmd_acc.resize(6);
@@ -62,10 +63,12 @@ private:
     Eigen::Matrix<double, 6, 6> Dd;
 
 
-    //////////////////////////
-    std::string box_desc_string;
+    // fcl2rct 
     std::vector<fcl::NaiveCollisionManagerVct *> managers;
-    urdf::Model model;
+    std::pair<std::vector<fcl::CollisionObject *>, std::vector<fcl::Transform3f>> rbtObjs;
+    std::pair<std::vector<fcl::CollisionObject *>, std::vector<fcl::Transform3f>> envObjs;
+    VisualMarkerPub *visMark;
+
     //////////////////////////
 };
 
